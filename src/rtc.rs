@@ -1085,20 +1085,19 @@ impl PeerConnection {
         where F: Fn(&mut Box<dyn InternalMediaReceiver>) -> bool
     {
         // Replaced btree_drain_filter with stable code
-        let keys_to_process: Vec<_> = self.stream_receiver
-            .iter_mut()
-            .filter(|(_, receiver)| poll_fn(*receiver))
-            .map(|(id, _)| *id)
-            .collect();
+        // Manual iteration to allow mutable access during filtering
+        let mut keys_to_process = Vec::new();
+        for (id, receiver) in self.stream_receiver.iter_mut() {
+            if poll_fn(receiver) {
+                keys_to_process.push(*id);
+            }
+        }
 
-        let removed: Vec<_> = keys_to_process
-            .iter()
-            .filter_map(|id| self.stream_receiver.remove(id).map(|v| (*id, v)))
-            .collect();
-
-        for (id, rc) in removed {
-            self.stream_receiver.insert(id, rc.into_void());
-            slog_debug!(self.logger, "Media receiver for channel {} has been closed. Using void receiver.", id);
+        for id in keys_to_process {
+            if let Some(rc) = self.stream_receiver.remove(&id) {
+                self.stream_receiver.insert(id, rc.into_void());
+                slog_debug!(self.logger, "Media receiver for channel {} has been closed. Using void receiver.", id);
+            }
         }
     }
 
@@ -1106,11 +1105,13 @@ impl PeerConnection {
         where F: Fn(&mut RefCell<InternalMediaSender>) -> bool
     {
         // Replaced btree_drain_filter with stable code
-        let keys_to_remove: Vec<_> = self.stream_sender
-            .iter_mut()
-            .filter(|(_, sender)| poll_fn(*sender))
-            .map(|(id, _)| *id)
-            .collect();
+        // Manual iteration to allow mutable access during filtering
+        let mut keys_to_remove = Vec::new();
+        for (id, sender) in self.stream_sender.iter_mut() {
+            if poll_fn(sender) {
+                keys_to_remove.push(*id);
+            }
+        }
 
         let removed: Vec<_> = keys_to_remove
             .iter()
