@@ -7,12 +7,11 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-# libnice = { git = "https://github.com/WolverinDEV/rust-libnice" }
-libnice = { git = "https://github.com/WolverinDEV/rust-libnice.git" }
-libusrsctp-sys = { git = "https://github.com/WolverinDEV/rust-usrsctp-sys.git" }
-#libusrsctp-sys = { path = "../rust-usrsctp-sys" }
-libsrtp2-sys = { git = "https://github.com/WolverinDEV/rust-srtp2-sys.git" }
-rtp-rs = { git = "https://github.com/WolverinDEV/rtp-rs.git" }
+# Using migrated repos from jorgebarreraa for full control
+libnice = { git = "https://github.com/jorgebarreraa/rust-libnice.git" }
+libusrsctp-sys = { git = "https://github.com/jorgebarreraa/rust-usrsctp-sys.git" }
+libsrtp2-sys = { git = "https://github.com/jorgebarreraa/rust-srtp2-sys.git" }
+rtp-rs = { git = "https://github.com/jorgebarreraa/rtp-rs.git" }
 tokio-tungstenite = "0.11.0"
 tokio = { version = "0.2", features = ["full"] }
 futures = "0.3.5"
