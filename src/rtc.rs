@@ -573,13 +573,19 @@ impl PeerConnection {
     }
 
     fn update_media_line_streams(&mut self, media: &SdpMedia, media_line: &mut MediaLine, transport: &mut RTCTransport) {
-        self.stream_receiver.drain_filter(|id, receiver| {
-            if receiver.track().media_line != media_line.unique_id() {
-                return false;
-            }
+        // Replaced btree_drain_filter with stable code
+        let keys_to_remove: Vec<_> = self.stream_receiver
+            .iter()
+            .filter(|(id, receiver)| {
+                receiver.track().media_line == media_line.unique_id()
+                    && !media_line.remote_streams.contains(id)
+            })
+            .map(|(id, _)| *id)
+            .collect();
 
-            !media_line.remote_streams.contains(id)
-        }).count();
+        for id in keys_to_remove {
+            self.stream_receiver.remove(&id);
+        }
 
         for receiver_id in media_line.remote_streams.iter() {
             if self.stream_receiver.contains_key(&receiver_id) {
@@ -1078,7 +1084,17 @@ impl PeerConnection {
     fn poll_stream_receiver<F>(&mut self, poll_fn: F)
         where F: Fn(&mut Box<dyn InternalMediaReceiver>) -> bool
     {
-        let removed = self.stream_receiver.drain_filter(|_, receiver| poll_fn(receiver)).collect::<Vec<_>>();
+        // Replaced btree_drain_filter with stable code
+        let keys_to_process: Vec<_> = self.stream_receiver
+            .iter_mut()
+            .filter(|(_, receiver)| poll_fn(receiver))
+            .map(|(id, _)| *id)
+            .collect();
+
+        let removed: Vec<_> = keys_to_process
+            .iter()
+            .filter_map(|id| self.stream_receiver.remove(id).map(|v| (*id, v)))
+            .collect();
 
         for (id, rc) in removed {
             self.stream_receiver.insert(id, rc.into_void());
@@ -1089,7 +1105,17 @@ impl PeerConnection {
     fn poll_stream_sender<F>(&mut self, poll_fn: F)
         where F: Fn(&mut RefCell<InternalMediaSender>) -> bool
     {
-        let removed = self.stream_sender.drain_filter(|_, sender| poll_fn(sender)).collect::<Vec<_>>();
+        // Replaced btree_drain_filter with stable code
+        let keys_to_remove: Vec<_> = self.stream_sender
+            .iter_mut()
+            .filter(|(_, sender)| poll_fn(sender))
+            .map(|(id, _)| *id)
+            .collect();
+
+        let removed: Vec<_> = keys_to_remove
+            .iter()
+            .filter_map(|id| self.stream_sender.remove(id).map(|v| (*id, v)))
+            .collect();
 
         for (_, sender) in removed {
             let sender = RefCell::borrow(&sender);

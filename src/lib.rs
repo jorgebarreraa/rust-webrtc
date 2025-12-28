@@ -1,6 +1,5 @@
 #![feature(seek_convenience)]
 #![feature(trait_alias)]
-#![feature(btree_drain_filter)]
 #![feature(map_first_last)]
 #![feature(seek_stream_len)]
 
