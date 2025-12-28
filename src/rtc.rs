@@ -1087,7 +1087,7 @@ impl PeerConnection {
         // Replaced btree_drain_filter with stable code
         let keys_to_process: Vec<_> = self.stream_receiver
             .iter_mut()
-            .filter(|(_, receiver)| poll_fn(receiver))
+            .filter(|(_, receiver)| poll_fn(*receiver))
             .map(|(id, _)| *id)
             .collect();
 
@@ -1108,7 +1108,7 @@ impl PeerConnection {
         // Replaced btree_drain_filter with stable code
         let keys_to_remove: Vec<_> = self.stream_sender
             .iter_mut()
-            .filter(|(_, sender)| poll_fn(sender))
+            .filter(|(_, sender)| poll_fn(*sender))
             .map(|(id, _)| *id)
             .collect();
 
